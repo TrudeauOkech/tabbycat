@@ -23,13 +23,11 @@ from users.permissions import has_permission, Permission
 from utils.misc import redirect_round, redirect_tournament, reverse_round, reverse_tournament
 from utils.mixins import (AdministratorMixin, AssistantMixin, CacheMixin, TabbycatPageTitlesMixin,
                           WarnAboutDatabaseUseMixin, WarnAboutLegacySendgridConfigVarsMixin)
-from utils.views import PostOnlyRedirectView
+from utils.views import ModelFormSetView, PostOnlyRedirectView
 
-from .forms import (RoundWeightForm, SetCurrentRoundMultipleBreakCategoriesForm,
-                    SetCurrentRoundSingleBreakCategoryForm, TournamentConfigureForm,
-                    TournamentStartForm)
+from .forms import (RoundWeightForm, ScheduleEventForm, SetCurrentRoundMultipleBreakCategoriesForm, SetCurrentRoundSingleBreakCategoryForm, TournamentConfigureForm, TournamentStartForm)
 from .mixins import RoundMixin, TournamentMixin
-from .models import Tournament
+from .models import ScheduleEvent, Tournament
 from .utils import get_side_name
 
 User = get_user_model()
@@ -369,3 +367,48 @@ class FixDebateTeamsView(AdministratorMixin, TournamentMixin, TemplateView):
 class StyleGuideView(TemplateView, TabbycatPageTitlesMixin):
     template_name = 'admin/style_guide.html'
     page_subtitle = 'Contextual sub title'
+
+
+class SetTournamentScheduleView(AdministratorMixin, TournamentMixin, ModelFormSetView):
+    """
+    Edit the schedule for a tournament: titles, start & end times, and (optional)
+    round assignment.
+    """
+    template_name = 'tournament_schedule_edit.html'
+    formset_model = ScheduleEvent
+    form_class    = ScheduleEventForm
+    formset_factory_kwargs = {
+        'form':   ScheduleEventForm,
+        'fields': ['title', 'round', 'start_time', 'end_time'],
+        'extra':  3,
+    }
+
+    def get_factory_kwargs(self):
+        kwargs = super().get_factory_kwargs()
+        kwargs.update({
+            'fields': ['title', 'start_time', 'end_time', 'round'],
+            'extra': 3,
+        })
+        return kwargs
+
+    def get_queryset(self):
+        return self.tournament.scheduleevent_set.all()
+
+    def get_formset(self, **kwargs):
+        formset = super().get_formset(**kwargs)
+        rounds_qs = self.tournament.round_set.all()
+        for form in formset:
+            form.fields['round'].queryset    = rounds_qs
+            form.fields['round'].empty_label = '—    —'
+        return formset
+
+    def formset_valid(self, formset):
+        instances = formset.save(commit=False)
+        for ev in instances:
+            ev.tournament = self.tournament
+            ev.save()
+        messages.success(self.request, "Saved schedule events.")
+        return super().formset_valid(formset)
+
+    def get_success_url(self):
+        return reverse_tournament('tournament-set-schedule', self.tournament)

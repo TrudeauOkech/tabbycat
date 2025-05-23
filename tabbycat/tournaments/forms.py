@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.forms import CharField, ChoiceField, Form, ModelChoiceField, ModelForm
+from django.forms import CharField, ChoiceField, DateTimeInput, Form, ModelChoiceField, ModelForm
 from django.forms.fields import IntegerField, NumberInput
 from django.forms.models import ModelChoiceIterator
 from django.utils.html import escape
@@ -16,7 +16,7 @@ from options.presets import all_presets, data_entry_presets_for_form, presets_fo
 from users.groups import all_groups
 from users.models import Group
 
-from .models import Round, Tournament
+from .models import Round, ScheduleEvent, Tournament
 from .signals import update_tournament_cache
 from .utils import auto_make_rounds
 
@@ -295,3 +295,13 @@ class RoundWeightForm(Form):
         Round.objects.bulk_update(rounds, ['weight'])
 
         return rounds
+
+
+class ScheduleEventForm(ModelForm):
+    class Meta:
+        model = ScheduleEvent
+        fields = ['title', 'start_time', 'end_time', 'round']
+        widgets = {
+            'start_time': DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_time':   DateTimeInput(attrs={'type': 'datetime-local'}),
+        }

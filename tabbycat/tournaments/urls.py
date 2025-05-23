@@ -80,4 +80,7 @@ urlpatterns = [
     path('admin/fix-debate-teams/',
         views.FixDebateTeamsView.as_view(),
         name='tournament-fix-debate-teams'),
+    path('admin/schedule/',
+        views.SetTournamentScheduleView.as_view(),
+        name='tournament-set-schedule'),
 ]
