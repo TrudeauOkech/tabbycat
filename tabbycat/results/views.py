@@ -84,7 +84,7 @@ class BaseResultsEntryForRoundView(RoundMixin, VueTableTemplateView):
         if self.tournament.pref('enable_postponements'):
             table.add_debate_postponement_column(draw)
         table.add_debate_venue_columns(draw, for_admin=True)
-        table.add_debate_results_columns(draw, iron=True, n_cols=self._get_draw().aggregate(n=Coalesce(Max('debateteam__side'), self.tournament.pref('teams_in_debate')-1))['n']+1)
+        table.add_debate_results_columns(draw, iron=True, n_cols=self._get_draw().aggregate(n=Coalesce(Max('debateteam__side'), self.tournament.pref('teams_in_debate') - 1))['n'] + 1)
         table.add_debate_adjudicators_column(draw, show_splits=True, for_admin=True)
         return table
 
@@ -127,13 +127,13 @@ class AdminResultsEntryForRoundView(AdministratorMixin, BaseResultsEntryForRound
         kwargs["debates_with_trainee_scoresheets"] = [
             f"{debate.matchup} ({debate.venue.name})"
             for debate in self.round.debate_set_with_prefetches(
-                teams=True, venues=True, adjudicators=False, speakers=False,
-                wins=False, results=False, institutions=False, check_ins=False, iron=False,
-                filter_kwargs={
+                teams=True, venues=True, adjudicators=False, speakers=False,  # noqa: E225
+                wins=False, results=False, institutions=False, check_ins=False, iron=False,  # noqa: E225
+                filter_kwargs={  # noqa: E225
                     'ballotsubmission__speakerscorebyadj__debate_adjudicator__type':
                         DebateAdjudicator.TYPE_TRAINEE,
                 },
-                ordering=None,
+                ordering=None,  # noqa: E225
             ).select_related('round__tournament').distinct()
             # TODO: The select_related() call above avoids an N+1 issue in the
             # call to self.round.tournament.sides in debate.matchup. If this
@@ -180,7 +180,7 @@ class PublicResultsForRoundView(RoundMixin, PublicTournamentPageMixin, VueTableT
 
         table = TabbycatTableBuilder(view=self, sort_key="venue")
         table.add_debate_venue_columns(debates)
-        table.add_debate_results_columns(debates, n_cols=debates.aggregate(n=Max('debateteam__side'))['n']+1)
+        table.add_debate_results_columns(debates, n_cols=debates.aggregate(n=Max('debateteam__side'))['n'] + 1)
         if not (self.tournament.pref('teams_in_debate') == 4 and self.round.is_break_round):
             table.add_debate_ballot_link_column(debates)
         table.add_debate_adjudicators_column(debates, show_splits=True)
