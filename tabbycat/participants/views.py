@@ -10,11 +10,9 @@ from django.db.models import Count, Max, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.forms import HiddenInput
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.utils.html import escape
 from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.generic.base import View
-from django.views.generic.edit import CreateView, DeleteView
 
 from actionlog.mixins import LogActionMixin
 from actionlog.models import ActionLogEntry
@@ -34,7 +32,6 @@ from utils.mixins import AdministratorMixin, AssistantMixin
 from utils.tables import TabbycatTableBuilder
 from utils.views import ModelFormSetView, VueTableTemplateView
 
-from .forms import AdminSpeakerForm
 from .models import Adjudicator, Institution, Person, Speaker, SpeakerCategory, Team
 from .serializers import SpeakerSerializer
 from .tables import AdjudicatorDebateTable, TeamDebateTable
@@ -388,45 +385,6 @@ class PublicTeamRecordView(PublicTournamentPageMixin, BaseTeamRecordView):
 class PublicAdjudicatorRecordView(PublicTournamentPageMixin, BaseAdjudicatorRecordView):
     public_page_preference = 'public_record'
     admin = False
-
-
-class CreateSpeakerView(AdministratorMixin, TournamentMixin, CreateView):
-    model = Speaker
-    form_class = AdminSpeakerForm
-    template_name = 'speaker_create.html'
-    page_title = _("Add Speaker")
-    page_emoji = '🗣'
-    edit_permission = Permission.EDIT_REGISTRATION
-
-    def get_team(self):
-        return get_object_or_404(Team, pk=self.kwargs['team_id'], tournament=self.tournament)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['tournament'] = self.tournament
-        kwargs['team'] = self.get_team()
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        kwargs['team'] = self.get_team()
-        return super().get_context_data(**kwargs)
-
-    def get_success_url(self):
-        return reverse_tournament('participants-team-record', self.tournament, kwargs={'pk': self.get_team().pk})
-
-
-class DeleteSpeakerView(AdministratorMixin, TournamentMixin, DeleteView):
-    model = Speaker
-    template_name = 'speaker_confirm_delete.html'
-    page_title = _("Delete Speaker")
-    page_emoji = '🗑'
-    edit_permission = Permission.EDIT_REGISTRATION
-
-    def get_queryset(self):
-        return super().get_queryset().filter(team__tournament=self.tournament)
-
-    def get_success_url(self):
-        return reverse_tournament('participants-team-record', self.tournament, kwargs={'pk': self.object.team.pk})
 
 
 # ==============================================================================

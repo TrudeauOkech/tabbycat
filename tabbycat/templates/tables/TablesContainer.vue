@@ -50,7 +50,7 @@ const copyTableTrigger = (i) => {
         <div class="input-group-append">
           <span class="input-group-text"><i data-feather="search" /></span>
         </div>
-        <div v-for="(table, i) in tablesData">
+        <div v-for="(t, i) in tablesData">
           <button
             class="btn btn-light border ml-2"
             data-toggle="tooltip"
@@ -64,7 +64,7 @@ const copyTableTrigger = (i) => {
     </div>
 
     <div
-      v-for="(table, i) in tablesData"
+      v-for="(t, i) in tablesData"
       class="col mb-3"
       :class="tableClass"
     >
@@ -74,26 +74,26 @@ const copyTableTrigger = (i) => {
       >
         <div class="card-body pl-3 pr-0 py-2">
           <h4
-            v-if="table.title"
+            v-if="t.title"
             class="card-title mt-1 mb-2"
           >
-            {{ table.title }}
+            {{ t.title }}
             <small
-              v-if="table.subtitle"
+              v-if="t.subtitle"
               class="text-muted d-md-inline d-none"
             >
-              {{ table.subtitle }}
+              {{ t.subtitle }}
             </small>
           </h4>
           <smart-table
             ref="table"
-            :table-headers="table.head"
-            :table-content="table.data"
-            :table-class="table.class"
-            :default-sort-key="table.sort_key"
-            :default-sort-order="table.sort_order"
-            :empty-title="table.empty_title"
-            :highlight-column="table.highlight_column"
+            :table-headers="t.head"
+            :table-content="t.data"
+            :table-class="t.class"
+            :default-sort-key="t.sort_key"
+            :default-sort-order="t.sort_order"
+            :empty-title="t.empty_title"
+            :highlight-column="t.highlight_column"
             :external-filter-key="filterKey"
             @toggle-checked="emit('toggle-checked', $event)"
           />
