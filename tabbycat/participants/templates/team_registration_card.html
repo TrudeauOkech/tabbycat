@@ -55,14 +55,35 @@
         {% endif %}
       </div>
 
-    {% if pref.show_speakers_in_draw %}
+    {% if pref.show_speakers_in_draw or admin_page %}
       <div class="list-group-item">
-        <strong>{% trans "Speakers:" %}</strong>
-        {% for speaker in team.speakers %}
-          {% person_display_name speaker %}{% if not forloop.last %}{% trans ", " %}{% endif %}
-        {% empty %}
-          {% trans "None" %}
-        {% endfor %}
+        {% if admin_page %}
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>{% trans "Speakers:" %}</strong>
+                <a href="{% url 'participants-speaker-add' tournament.slug team.pk %}" class="btn btn-sm btn-outline-primary" title="{% trans "Add Speaker" %}">
+                    <span class="emoji">➕</span>
+                </a>
+            </div>
+            <ul class="list-unstyled mt-2 mb-0">
+            {% for speaker in team.speakers %}
+                <li class="d-flex justify-content-between align-items-center mb-1">
+                    <span>{% person_display_name speaker %}</span>
+                    <a href="{% url 'participants-speaker-delete' tournament.slug speaker.pk %}" class="text-danger ml-2" title="{% trans "Delete Speaker" %}">
+                        <span class="emoji">🗑</span>
+                    </a>
+                </li>
+            {% empty %}
+                <li class="text-muted">{% trans "None" %}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <strong>{% trans "Speakers:" %}</strong>
+            {% for speaker in team.speakers %}
+              {% person_display_name speaker %}{% if not forloop.last %}{% trans ", " %}{% endif %}
+            {% empty %}
+              {% trans "None" %}
+            {% endfor %}
+        {% endif %}
       </div>
     {% endif %}
 
