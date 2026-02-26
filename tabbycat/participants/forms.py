@@ -1,5 +1,4 @@
 from django import forms
-from django.utils.translation import gettext_lazy as _
 
 from privateurls.utils import populate_url_keys
 from registration.form_utils import CustomQuestionsFormMixin
