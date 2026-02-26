@@ -1,100 +1,124 @@
 <script setup>
 import SmartTable from './SmartTable.vue'
-import { computed, ref } from 'vue'
+import { computed, ref, onBeforeUpdate } from 'vue'
 import { useDjangoI18n } from '../composables/useDjangoI18n.js'
 
 const props = defineProps({
-  tablesData: Array, // Passed down from main.js
-  orientation: String, // Passed down from template
+  tablesData: Array,
+  orientation: String,
 })
 
 const emit = defineEmits(['toggle-checked'])
 
 const { gettext } = useDjangoI18n()
-const filterKey = ref('')
+const tableRefs = ref([])
+const search = ref('')
 
-const table = ref([])
-
-const tableClass = computed(() => {
-  if (props.tablesData.length === 1) {
-    return 'col-md-12'
-  }
-  if (props.orientation === 'rows') {
-    return 'col-md-12'
-  }
-  if (props.orientation === 'columns') {
-    return 'col-md-6'
-  }
-  return 'col-md-12'
+// Reset refs before each update to ensure they match the current render cycle
+onBeforeUpdate(() => {
+  tableRefs.value = []
 })
 
-const getTableId = (i) => `tableContainer-${i}`
+const filteredTablesData = computed(() => {
+  if (props.tablesData === null) {
+    return []
+  }
+  if (!search.value) {
+    return props.tablesData
+  }
+  const needle = search.value.toLowerCase()
+  return props.tablesData.filter((table) => {
+    return (
+      table.title.toLowerCase().includes(needle) ||
+      (table.rows || []).some((row) => {
+        return (
+          row.cells || row
+        ).some((cell) => {
+          return (
+            (cell.text && cell.text.toLowerCase().includes(needle)) ||
+            (cell.sort && cell.sort.toString().toLowerCase().includes(needle))
+          )
+        })
+      })
+    )
+  })
+})
 
 const copyTableTrigger = (i) => {
-  const child = table.value?.[i]
+  const child = tableRefs.value?.[i]
   child?.copyTableData?.()
 }
 </script>
 
 <template>
-  <div class="row">
-    <div class="col-12 mb-3 d-print-none">
-      <div class="input-group">
-        <input
-          id="table-search"
-          v-model="filterKey"
-          class="form-control table-search"
-          type="search"
-          :placeholder="gettext('Find in Table')"
-        >
-        <div class="input-group-append">
+  <div>
+    <div
+      v-if="filteredTablesData.length > 0"
+      class="row"
+    >
+      <div class="col-xl-6">
+        <div class="input-group mb-3">
           <span class="input-group-text"><i data-feather="search" /></span>
-        </div>
-        <div v-for="(t, i) in tablesData">
-          <button
-            class="btn btn-light border ml-2"
-            data-toggle="tooltip"
-            title="Copy table data to clipboard in a CSV format"
-            @click.prevent="copyTableTrigger(i)"
+          <input
+            v-model="search"
+            class="form-control"
+            :placeholder="gettext('Filter tables...')"
           >
-            <i data-feather="clipboard" />
-          </button>
         </div>
       </div>
     </div>
-
     <div
-      v-for="(t, i) in tablesData"
-      class="col mb-3"
-      :class="tableClass"
+      :class="{
+        'masonry-grid': orientation === 'masonry',
+        row: orientation === 'row',
+      }"
     >
       <div
-        :id="getTableId(i)"
-        class="card table-container pl-1"
+        v-for="(t, i) in filteredTablesData"
+        :key="i"
+        class="col-12"
+        :class="{ 'col-xl-6': orientation === 'masonry' }"
       >
-        <div class="card-body pl-3 pr-0 py-2">
-          <h4
+        <div class="card mb-4">
+          <div
             v-if="t.title"
-            class="card-title mt-1 mb-2"
+            class="card-header d-flex justify-content-between align-items-center"
           >
-            {{ t.title }}
-            <small
-              v-if="t.subtitle"
-              class="text-muted d-md-inline d-none"
-            >
-              {{ t.subtitle }}
-            </small>
-          </h4>
+            <h4 class="card-title mb-0">
+              {{ t.title }}
+              <span
+                v-if="t.rows"
+                class="badge bg-secondary"
+              >
+                {{ t.rows.length }}
+              </span>
+            </h4>
+            <div class="dropdown">
+              <a
+                href="#"
+                class="btn btn-ghost-secondary btn-icon btn-sm rounded-circle"
+                data-bs-toggle="dropdown"
+              >
+                <i data-feather="more-vertical" />
+              </a>
+              <div class="dropdown-menu dropdown-menu-end">
+                <a
+                  class="dropdown-item"
+                  href="#"
+                  @click="copyTableTrigger(i)"
+                >
+                  <i data-feather="copy" /> {{ gettext("Copy table to CSV") }}
+                </a>
+              </div>
+            </div>
+          </div>
           <smart-table
-            ref="table"
-            :table-headers="t.head"
-            :table-content="t.data"
-            :table-class="t.class"
-            :default-sort-key="t.sort_key"
-            :default-sort-order="t.sort_order"
-            :empty-title="t.empty_title"
-            :highlight-column="t.highlight_column"
-            :external-filter-key="filterKey"
+            :ref="
+              (el) => {
+                if (el) tableRefs[i] = el;
+              }
+            "
+            :table-data="t"
             @toggle-checked="emit('toggle-checked', $event)"
           />
         </div>
@@ -102,3 +126,18 @@ const copyTableTrigger = (i) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.masonry-grid {
+  column-count: 2;
+  column-gap: 1.5rem;
+}
+@media (max-width: 1200px) {
+  .masonry-grid {
+    column-count: 1;
+  }
+}
+.card {
+  break-inside: avoid;
+}
+</style>
