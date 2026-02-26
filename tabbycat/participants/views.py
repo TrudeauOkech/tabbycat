@@ -396,7 +396,7 @@ class CreateSpeakerView(AdministratorMixin, TournamentMixin, CreateView):
     template_name = 'speaker_create.html'
     page_title = _("Add Speaker")
     page_emoji = '🗣'
-    view_permission = Permission.EDIT_REGISTRATION
+    edit_permission = Permission.EDIT_REGISTRATION
 
     def get_team(self):
         return get_object_or_404(Team, pk=self.kwargs['team_id'], tournament=self.tournament)
@@ -420,7 +420,7 @@ class DeleteSpeakerView(AdministratorMixin, TournamentMixin, DeleteView):
     template_name = 'speaker_confirm_delete.html'
     page_title = _("Delete Speaker")
     page_emoji = '🗑'
-    view_permission = Permission.EDIT_REGISTRATION
+    edit_permission = Permission.EDIT_REGISTRATION
 
     def get_queryset(self):
         return super().get_queryset().filter(team__tournament=self.tournament)
